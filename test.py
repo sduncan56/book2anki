@@ -114,6 +114,14 @@ class TestGloss(unittest.TestCase):
         altreadings = gloss.generate_alt_readings(readings)
         self.assertEqual('帝国 【ていこく】</br>', altreadings)
 
+    def test_generate_alt_readings_noreading(self):
+        gloss = Gloss()
+
+        text = "ここから (exp) from here; KD"
+        readings = gloss.get_readings(text)
+        altreadings = gloss.generate_alt_readings(readings)
+        self.assertEqual(0, len(altreadings))
+
 
     @unittest.skip("this would look nicer but I don't actually care")
     def test_get_readings_cleaned(self):
@@ -159,3 +167,10 @@ class TestGloss(unittest.TestCase):
 
         clean = self.clean_all(gloss, text)
         self.assertEqual("描く - to draw; to paint; to sketch; (2) (えがく only) to depict; to describe; (3) to picture in one's mind; to imagine; (4) to form a certain shape (e.g. path of an action, appearance of an object, etc.)", clean)
+
+    def test_should_ignore_gloss(self):
+        gloss = Gloss()
+
+        text = "生活 【せいかつ】 (n,vs) living; life (one's daily existence); livelihood; (P); ED "
+        shouldIgnore = gloss.is_known_word(text)
+        self.assertTrue(shouldIgnore)

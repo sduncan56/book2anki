@@ -3,6 +3,7 @@ import os
 import re
 import time
 from Gloss import Gloss
+from japana.word_count import word_count
 
 class CardGenerator:
     def __init__(self, deckName):
@@ -12,7 +13,8 @@ class CardGenerator:
                                        {'name': 'Expression'},
                                        {'name': 'Reading'},
                                        {'name': 'Gloss'},
-                                       {'name': 'AltReadings'}
+                                       {'name': 'AltReadings'},
+                                       {'name': 'Known Definitions'}
                                    ],
                                    templates=[
                                        {
@@ -26,10 +28,10 @@ class CardGenerator:
             deckName
         )
 
-    def add_card(self, expression, reading, gloss, altreadings):
+    def add_card(self, expression, reading, gloss, altreadings, knowndefs):
         note = genanki.Note(
             model=self.model,
-            fields=[expression, reading, gloss, altreadings],
+            fields=[expression, reading, gloss, altreadings, knowndefs],
         )
         self.deck.add_note(note)
 
@@ -63,6 +65,7 @@ for sentence in sentences:
 
     definitions = ''
     altreadings = ''
+    knowndefs = ''
 
     for gloss in glosses:
         gloss = glosser.remove_dict_annotations(gloss)
@@ -71,6 +74,10 @@ for sentence in sentences:
         altreadings += glosser.generate_alt_readings(readings)
 
         gloss = glosser.clean_front(gloss)
+
+        if glosser.is_known_word(gloss):
+            continue
+
         gloss = glosser.clean_verb_stem(gloss)
         gloss = glosser.clean_back(gloss)
         gloss = glosser.remove_furigana(gloss)
@@ -80,10 +87,10 @@ for sentence in sentences:
     definitions = definitions[10::]
 
 
-    cardGen.add_card(sentence, "", definitions, altreadings)
+    cardGen.add_card(sentence, "", definitions, altreadings, knowndefs)
     count = count+1
 
-    if count > 50:
+    if count > 200:
         break
 
 

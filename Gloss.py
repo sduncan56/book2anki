@@ -12,7 +12,15 @@ class Gloss:
     junk_terms = ['(P);', '(P)', 'ED;', 'ED', 'KD', 'ES', 'ST', 'SP', 'MA', 'EV', '(n,adj-no)',
                   '(v5r,vi,aux-v)', '(n)', '(adv-no)', '(adj-no,n)', '(adj-no)',
                   '(v1)', '(vi)', '(v1,vi)', '( adj-i)', '(adj-na)', '(aux)',
-                  '(aux-v)', '(uk)']
+                  '(aux-v)', '(uk)', '(n-t)']
+
+    ignore_set = None
+
+    def __init__(self):
+        ignoreFile = open("ignorelist", "r")
+        ignoreText = ignoreFile.read()
+        self.ignore_set = set(ignoreText.splitlines())
+        ignoreFile.close()
 
 
     def send_request(self, url, term, tries):
@@ -129,14 +137,6 @@ class Gloss:
             i-=1
         return gloss[i:start]
 
-
-        #     if not gloss[i].isspace() and charVal < 58 or (charVal > 59 and charVal < 128):
-        #         return ""
-        #     elif charVal == 58: #i.e. :
-        #         return gloss[i+1:start].lstrip()
-        #     i -= 1
-        # return gloss[i:start]
-
     def get_readings(self, gloss):
         readings = []
         for i, c in enumerate(gloss):
@@ -148,6 +148,10 @@ class Gloss:
         return readings
 
     def generate_alt_readings(self, readings):
+
+        if len(readings) == 0:
+            return ''
+
         altreadings = ''
 
         for reading in readings:
@@ -166,3 +170,7 @@ class Gloss:
         result += gloss[lastGoodIndex::]
 
         return result
+
+    def is_known_word(self, gloss):
+        wordIndex = gloss.find(' ')
+        return True if gloss[0:wordIndex] in self.ignore_set else False
