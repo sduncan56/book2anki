@@ -17,10 +17,6 @@ class TestGloss(unittest.TestCase):
         clean2 = gloss.clean_front(text2)
         self.assertEqual('晴れ - clear weather; fine weather;', clean2)
 
-        text3 = ' 夜空 【よぞら】 	(n) night sky; (P);'
-        clean3 = gloss.clean_front(text3)
-        self.assertEqual('夜空 - night sky; (P);', clean3)
-
     def test_clean_verb_stem_withnumbers(self):
         gloss = Gloss()
         result = gloss.clean_verb_stem('《verb stem》 晴れる : 晴れる(P); 霽れる 【はれる】 ; (v1,vi) (1) to clear up')
@@ -61,7 +57,7 @@ class TestGloss(unittest.TestCase):
         clean = gloss.clean_verb_stem(clean)
         clean = gloss.clean_back(clean)
 
-        self.assertEqual('よく - nicely; properly; well; skillfully; skilfully; (2) (uk) frequently; often; (3) (uk) I\'m glad that you ...; thank you for ...', clean)
+        self.assertEqual('よく - nicely; properly; well; skillfully; skilfully; (2)  frequently; often; (3)  I\'m glad that you ...; thank you for ...', clean)
 
     def test_cleanall_2(self):
         gloss = Gloss()
@@ -84,3 +80,82 @@ class TestGloss(unittest.TestCase):
         clean = gloss.clean_back(clean)
 
         self.assertEqual('夜空 - night sky', clean)
+
+    def test_get_readings(self):
+        gloss = Gloss()
+
+        text = "頭 【あたま(P); かしら(P)】 (n) (1) head; (2) hair (on one's head); (3) (あたま only) mind; brains; intellect; (4) leader; chief; boss; captain; (5) top; tip; (6) beginning; start; (7) (あたま only) head; person; (8) (かしら only) top structural component of a kanji; (9) (あたま only) (col) {mahj} (See 雀頭・ジャントー) pair; (P); 【とう】 ; (ctr) counter for large animals (e.g. head of cattle); counter for insects in a collection; counter for helmets, masks, etc.; (P);  : 頭; 首 【こうべ; かぶり(頭); ず(頭); つむり(頭); つむ(頭); つぶり(頭)(ok); かぶ(頭)(ok)】 ; (n) head; : ど頭; 頭 【どたま】 ; (n) (uk) (derog) head; dome; bean; nob; noggin; 【かぶし】 ; (n) (arch) (uk) shape of one's head; 【がしら】 ; (suf) (1) (after a noun) top of ...; head of ...; (2) (after the -masu stem of a verb) the moment that ...;"
+
+        readings = gloss.get_readings(text)
+        self.assertEqual(6, len(readings))
+        self.assertEqual('頭 【あたま(P); かしら(P)】', readings[0])
+        self.assertEqual('【とう】', readings[1])
+        self.assertEqual('頭; 首 【こうべ; かぶり(頭); ず(頭); つむり(頭); つむ(頭); つぶり(頭)(ok); かぶ(頭)(ok)】', readings[2])
+        self.assertEqual('ど頭; 頭 【どたま】', readings[3])
+        self.assertEqual('【かぶし】', readings[4])
+        self.assertEqual('【がしら】', readings[5])
+
+    def test_generate_alt_readings(self):
+        gloss = Gloss()
+        text = "頭 【あたま(P); かしら(P)】 (n) (1) head; (2) hair (on one's head); (3) (あたま only) mind; brains; intellect; (4) leader; chief; boss; captain; (5) top; tip; (6) beginning; start; (7) (あたま only) head; person; (8) (かしら only) top structural component of a kanji; (9) (あたま only) (col) {mahj} (See 雀頭・ジャントー) pair; (P); 【とう】 ; (ctr) counter for large animals (e.g. head of cattle); counter for insects in a collection; counter for helmets, masks, etc.; (P);  : 頭; 首 【こうべ; かぶり(頭); ず(頭); つむり(頭); つむ(頭); つぶり(頭)(ok); かぶ(頭)(ok)】 ; (n) head; : ど頭; 頭 【どたま】 ; (n) (uk) (derog) head; dome; bean; nob; noggin; 【かぶし】 ; (n) (arch) (uk) shape of one's head; 【がしら】 ; (suf) (1) (after a noun) top of ...; head of ...; (2) (after the -masu stem of a verb) the moment that ...;"
+
+        text = gloss.remove_dict_annotations(text)
+        readings = gloss.get_readings(text)
+        altreadings = gloss.generate_alt_readings(readings)
+
+        self.assertEqual('頭 【あたま かしら】 | 【とう】 | 頭; 首 【こうべ; かぶり(頭); ず(頭); つむり(頭); つむ(頭); つぶり(頭)(ok); かぶ(頭)(ok)】 | ど頭; 頭 【どたま】 | 【かぶし】 | 【がしら】</br>', altreadings)
+
+    def test_generate_alt_readings_withparticle(self):
+        gloss = Gloss()
+
+        text = '帝国の from 帝国 【ていこく】 (n) (1) empire; (adj-no) (2) imperial; (P); ED'
+        text = gloss.remove_dict_annotations(text)
+        readings = gloss.get_readings(text)
+        altreadings = gloss.generate_alt_readings(readings)
+        self.assertEqual('帝国 【ていこく】</br>', altreadings)
+
+
+    @unittest.skip("this would look nicer but I don't actually care")
+    def test_get_readings_cleaned(self):
+        gloss = Gloss()
+
+        text = gloss.remove_dict_annotations("頭 【あたま(P); かしら(P)】 (n) (1) head;")
+
+        readings = gloss.get_readings(text)
+        self.assertEqual('頭 【あたま; かしら】', readings[0])
+
+
+
+    def test_remove_furigana(self):
+        gloss = Gloss()
+
+        text = "頭 【あたま(P); かしら(P)】 (n) (1) head; (2) hair (on one's head); (3) (あたま only) mind; brains; intellect; (4) leader; chief; boss; captain; (5) top; tip; (6) beginning; start; (7) (あたま only) head; person; (8) (かしら only) top structural component of a kanji; (9) (あたま only) (col) {mahj} (See 雀頭・ジャントー) pair; (P); 【とう】 ; (ctr) counter for large animals (e.g. head of cattle); counter for insects in a collection; counter for helmets, masks, etc.; (P);  : 頭; 首 【こうべ; かぶり(頭); ず(頭); つむり(頭); つむ(頭); つぶり(頭)(ok); かぶ(頭)(ok)】 ; (n) head; : ど頭; 頭 【どたま】 ; (n) (uk) (derog) head; dome; bean; nob; noggin; 【かぶし】 ; (n) (arch) (uk) shape of one's head; 【がしら】 ; (suf) (1) (after a noun) top of ...; head of ...; (2) (after the -masu stem of a verb) the moment that ...;"
+
+        clean = gloss.remove_furigana(text)
+        self.assertEqual("頭  (n) (1) head; (2) hair (on one's head); (3) (あたま only) mind; brains; intellect; (4) leader; chief; boss; captain; (5) top; tip; (6) beginning; start; (7) (あたま only) head; person; (8) (かしら only) top structural component of a kanji; (9) (あたま only) (col) {mahj} (See 雀頭・ジャントー) pair; (P);  ; (ctr) counter for large animals (e.g. head of cattle); counter for insects in a collection; counter for helmets, masks, etc.; (P);  : 頭; 首  ; (n) head; : ど頭; 頭  ; (n) (uk) (derog) head; dome; bean; nob; noggin;  ; (n) (arch) (uk) shape of one's head;  ; (suf) (1) (after a noun) top of ...; head of ...; (2) (after the -masu stem of a verb) the moment that ...;", clean)
+
+    def test_clean_front_no_tabs(self):
+        gloss = Gloss()
+        text = '衛星 【えいせい】 (n) (1) {astron} (natural) satellite; moon; (2) (See 人工衛星) (artificial) satellite; (P); ED Name(s): 【えいせい】 (u) Eisei '
+
+        clean = self.clean_all(gloss, text)
+
+        #this could be cleaner
+        self.assertEqual('衛星 -   (1) {astron} (natural) satellite; moon; (2) (See 人工衛星) (artificial) satellite', clean)
+
+    def clean_all(self, gloss, text):
+        clean = gloss.remove_dict_annotations(text)
+        clean = gloss.clean_front(clean)
+        clean = gloss.clean_verb_stem(clean)
+        clean = gloss.clean_back(clean)
+        clean = gloss.remove_furigana(clean)
+        return clean
+
+    def test_leading_text(self):
+        gloss = Gloss()
+
+        g = gloss.fetchGlosses('描かれ')
+        text = " Possible inflected verb or adjective: (passive)<br>描く : 描く(P); 画く 【えがく(P); かく】 	(v5k,vt) (1) (See 書く・2) to draw; to paint; to sketch; (2) (えがく only) to depict; to describe; (3) to picture in one's mind; to imagine; (4) to form a certain shape (e.g. path of an action, appearance of an object, etc.); (P); ED "
+
+        clean = self.clean_all(gloss, text)
+        self.assertEqual("描く - to draw; to paint; to sketch; (2) (えがく only) to depict; to describe; (3) to picture in one's mind; to imagine; (4) to form a certain shape (e.g. path of an action, appearance of an object, etc.)", clean)
