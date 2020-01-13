@@ -12,15 +12,27 @@ class Gloss:
     junk_terms = ['(P);', '(P)', 'ED;', 'ED', 'KD', 'ES', 'ST', 'SP', 'MA', 'EV', '(n,adj-no)',
                   '(v5r,vi,aux-v)', '(n)', '(adv-no)', '(adj-no,n)', '(adj-no)',
                   '(v1)', '(vi)', '(v1,vi)', '( adj-i)', '(adj-na)', '(aux)',
-                  '(aux-v)', '(uk)', '(n-t)']
+                  '(aux-v)', '(uk)', '(n-t)', '(adj-no,adj-na,n)']
 
-    ignore_set = None
+    ignore_set = set()
 
     def __init__(self):
-        ignoreFile = open("ignorelist", "r")
-        ignoreText = ignoreFile.read()
-        self.ignore_set = set(ignoreText.splitlines())
-        ignoreFile.close()
+        pass
+        # ignoreFile = open("ignorelist", "r")
+        # ignoreText = ignoreFile.read()
+        # self.ignore_set = set(ignoreText.splitlines())
+        # ignoreFile.close()
+
+    def populate_ignore_set(self, frequency_list):
+        for entry in frequency_list:
+            if (entry['jlpt'] is None or entry['jlpt'] is 'N1') and entry['frequency'] < 100:
+                continue
+
+            self.ignore_set.add(entry['word'])
+
+    def remember_word(self, gloss):
+        wordIndex = gloss.find(' ')
+        self.ignore_set.add(gloss[0:wordIndex])
 
 
     def send_request(self, url, term, tries):
@@ -65,6 +77,13 @@ class Gloss:
         if lineBreakIndex != -1:
             gloss = gloss[lineBreakIndex+4::]
 
+        firstSpaceIndex = gloss.find(' ')
+        if gloss[firstSpaceIndex::].find('from') == 1:
+            gloss = gloss[firstSpaceIndex+6::]
+            if gloss[0] == ":":
+                gloss = gloss[1::]
+            gloss = gloss.lstrip()
+
         tabIndex = gloss.find('\t')
         cutIndex = -1
 
@@ -72,26 +91,40 @@ class Gloss:
 
 
         for i in range(len(gloss)):
-            character = gloss[i + tabIndex + 1]
-            if character.isalpha() and not character.isspace() and not seenOpenBracket:
-                tabIndex = i + tabIndex
-                break
+            if i + tabIndex + 1 < len(gloss):
+                character = gloss[i + tabIndex + 1]
+                if character.isalpha() and not character.isspace() and not seenOpenBracket:
+                    tabIndex = i + tabIndex
+                    break
 
-            if character == '(':
-                seenOpenBracket = True
-            elif character == ')':
-                seenOpenBracket = False
+                if character == '(':
+                    seenOpenBracket = True
+                elif character == ')':
+                    seenOpenBracket = False
 
         for i in range(len(gloss)):
-            if gloss[i] == ' ' or gloss[i] == ':':
+            if gloss[i] == ' ' or gloss[i] == ':' or gloss[i] == ';':
                 cutIndex = i
                 break
 
         assert (cutIndex > 0)
 
-        if tabIndex > 0:
-            return gloss[0:cutIndex] + ' - ' + gloss[tabIndex + 1::]
-        return gloss[0:cutIndex] + ' - ' + gloss[cutIndex+1::]
+        #if there is no convenient tab, use the first english character (or '{') instead.
+        #argument could be made that we should do this anyway
+        if tabIndex == -1:
+            for i in range(cutIndex+1, len(gloss)):
+                c = gloss[i]
+                charOrd = ord(gloss[i])
+                if charOrd >= 65 and charOrd <=90 or charOrd >= 97 and charOrd <= 123:
+                    tabIndex = i-1
+                    break
+
+
+        blah = gloss[tabIndex]
+        if gloss[tabIndex] == '{' or gloss[tabIndex] == '(':
+            gloss = gloss[0:tabIndex] + ' ' + gloss[tabIndex::]
+
+        return gloss[0:cutIndex] + ' - ' + gloss[tabIndex + 1::]
 
     def remove_dict_annotations(self, gloss):
         for term in self.junk_terms:

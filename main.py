@@ -48,9 +48,14 @@ string = file.read()
 string = re.sub(r'《.+?》', '', string)
 sentences = re.split('\n|。', string)
 
+words = word_count(string, True, False, False)
+
+
 cardGen = CardGenerator("星界の紋章")
 
 glosser = Gloss()
+
+glosser.populate_ignore_set(words)
 
 count = 0
 
@@ -68,30 +73,35 @@ for sentence in sentences:
     knowndefs = ''
 
     for gloss in glosses:
-        gloss = glosser.remove_dict_annotations(gloss)
+        try:
+            gloss = glosser.remove_dict_annotations(gloss)
 
-        readings = glosser.get_readings(gloss)
-        altreadings += glosser.generate_alt_readings(readings)
+            readings = glosser.get_readings(gloss)
+            altreadings += glosser.generate_alt_readings(readings)
 
-        gloss = glosser.clean_front(gloss)
+            gloss = glosser.clean_front(gloss)
+
+            gloss = glosser.clean_verb_stem(gloss)
+            gloss = glosser.clean_back(gloss)
+            gloss = glosser.remove_furigana(gloss)
+        except Exception as e:
+            print("Error with term: " + gloss)
+            raise e
 
         if glosser.is_known_word(gloss):
-            continue
-
-        gloss = glosser.clean_verb_stem(gloss)
-        gloss = glosser.clean_back(gloss)
-        gloss = glosser.remove_furigana(gloss)
-
-        definitions = definitions+'</br></br>'+gloss
+            knowndefs += '</br></br>' + gloss
+        else:
+            definitions += '</br></br>'+gloss
+            glosser.remember_word(gloss)
 
     definitions = definitions[10::]
+    knowndefs = knowndefs[10::]
 
 
     cardGen.add_card(sentence, "", definitions, altreadings, knowndefs)
-    count = count+1
-
-    if count > 200:
-        break
+    # count = count+1
+    # if count > 200:
+    #     break
 
 
 

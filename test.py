@@ -17,6 +17,39 @@ class TestGloss(unittest.TestCase):
         clean2 = gloss.clean_front(text2)
         self.assertEqual('晴れ - clear weather; fine weather;', clean2)
 
+    def test_clean_front_particle(self):
+        gloss = Gloss()
+        text = "帝国の from 帝国 【ていこく】 (n) (1) empire; (adj-no) (2) imperial; (P); ED"
+        text = gloss.remove_dict_annotations(text)
+        text = gloss.clean_front(text)
+        text = gloss.clean_verb_stem(text)
+        text = gloss.clean_back(text)
+        text = gloss.remove_furigana(text)
+
+        self.assertEqual("帝国 - empire;  (2) imperial", text)
+
+    def test_clean_front_particle2(self):
+        gloss = Gloss()
+        text = "異形の from : 異形; 異型 【いけい】 (n,adj-no) atypical appearance; atypicality; heteromorphy; 【いぎょう】 ; (adj-no,adj-na,n) fantastic; grotesque; strange-looking; suspicious-looking; ED "
+        text = gloss.remove_dict_annotations(text)
+        text = gloss.clean_front(text)
+        text = gloss.clean_verb_stem(text)
+        text = gloss.clean_back(text)
+        text = gloss.remove_furigana(text)
+
+        self.assertEqual("異形 - atypical appearance; atypicality; heteromorphy;  ;  fantastic; grotesque; strange-looking; suspicious-looking", text)
+
+    def test_clean_front_retain_brace(self):
+        gloss = Gloss()
+        text = "改ページ : 改ページ; 改頁 【かいページ】 	 {comp} repagination; new page; form feed; page break;"
+        text = gloss.remove_dict_annotations(text)
+        text = gloss.clean_front(text)
+        text = gloss.clean_verb_stem(text)
+        text = gloss.clean_back(text)
+        text = gloss.remove_furigana(text)
+
+        self.assertEqual("改ページ - {comp} repagination; new page; form feed; page break", text)
+
     def test_clean_verb_stem_withnumbers(self):
         gloss = Gloss()
         result = gloss.clean_verb_stem('《verb stem》 晴れる : 晴れる(P); 霽れる 【はれる】 ; (v1,vi) (1) to clear up')
@@ -148,8 +181,7 @@ class TestGloss(unittest.TestCase):
 
         clean = self.clean_all(gloss, text)
 
-        #this could be cleaner
-        self.assertEqual('衛星 -   (1) {astron} (natural) satellite; moon; (2) (See 人工衛星) (artificial) satellite', clean)
+        self.assertEqual('衛星 - {astron} (natural) satellite; moon; (2) (See 人工衛星) (artificial) satellite', clean)
 
     def clean_all(self, gloss, text):
         clean = gloss.remove_dict_annotations(text)
@@ -162,15 +194,16 @@ class TestGloss(unittest.TestCase):
     def test_leading_text(self):
         gloss = Gloss()
 
-        g = gloss.fetchGlosses('描かれ')
         text = " Possible inflected verb or adjective: (passive)<br>描く : 描く(P); 画く 【えがく(P); かく】 	(v5k,vt) (1) (See 書く・2) to draw; to paint; to sketch; (2) (えがく only) to depict; to describe; (3) to picture in one's mind; to imagine; (4) to form a certain shape (e.g. path of an action, appearance of an object, etc.); (P); ED "
 
         clean = self.clean_all(gloss, text)
         self.assertEqual("描く - to draw; to paint; to sketch; (2) (えがく only) to depict; to describe; (3) to picture in one's mind; to imagine; (4) to form a certain shape (e.g. path of an action, appearance of an object, etc.)", clean)
 
+
+
     def test_should_ignore_gloss(self):
         gloss = Gloss()
-
+        gloss.ignore_set.add("生活")
         text = "生活 【せいかつ】 (n,vs) living; life (one's daily existence); livelihood; (P); ED "
         shouldIgnore = gloss.is_known_word(text)
         self.assertTrue(shouldIgnore)
