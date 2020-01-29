@@ -9,17 +9,24 @@ from CardGenerator import CardGenerator
 
 
 class DeckBuilder:
-    glosser = Gloss()
 
-    def get_sentences_from_file(self, path):
+    def __init__(self, glosser):
+        self.glosser = glosser
+
+    def get_sentences_from_file(self, path, jlpt, threshold, furiganadelim):
         file = open(path, "r")
         string = file.read()
 
-        string = re.sub(r'《.+?》', '', string)
+        if len(furiganadelim) != 0 and len(furiganadelim) != 2:
+            raise Exception("Must be 0 or 2 characters for furigana delimiters")
+
+        if furiganadelim:
+            reg = (furiganadelim[0], '.+?', furiganadelim[1])
+            string = re.sub(''.join(reg), '', string)
         sentences = re.split('\n|。', string)
 
         words = word_count(string, True, False, False)
-        self.glosser.populate_ignore_set(words)
+        self.glosser.populate_ignore_set(words, jlpt, threshold)
 
         return sentences
 
@@ -31,7 +38,7 @@ class DeckBuilder:
 
             sentence = sentence.strip()
 
-            glosses = self.glosser.fetchGlosses(sentence)
+            glosses = self.glosser.fetch_glosses(sentence)
 
             definitions = altreadings = knowndefs = ''
             altreadings, definitions, knowndefs = self.process_glosses(altreadings, definitions, glosses, knowndefs)
@@ -74,11 +81,19 @@ class DeckBuilder:
 @click.command()
 @click.argument('filepath')
 @click.option('-output', default='deck', help='output filename')
-def create_cards(filepath, output):
-    cardGen = CardGenerator("星界の紋章")
+@click.option('-jlpt', default=5, help='filters out cards below the given JLPT level from the main gloss field. e.g. '
+                                       '"2" will filter out words from the N3, N4, and N5 sets')
+@click.option('-threshold', default=100, help='filters out cards that occur more times than this in the document from '
+                                              'the main gloss field')
+@click.option('-furiganadelim', default='《》', help='the two characters that indicate furigana in the text. All '
+                                                   'instances of these characters and everything inside them will be '
+                                                   'deleted')
+def create_cards(filepath, output, jlpt, threshold, furiganadelim):
+    cardGen = CardGenerator(output)
+    glosser = Gloss()
 
-    deckBuilder = DeckBuilder()
-    sentences = deckBuilder.get_sentences_from_file(filepath)
+    deckBuilder = DeckBuilder(glosser)
+    sentences = deckBuilder.get_sentences_from_file(filepath, jlpt, threshold, furiganadelim)
     deckBuilder.process_sentences(sentences, cardGen)
 
     cardGen.output_deck(output+".apkg")

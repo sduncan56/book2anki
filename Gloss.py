@@ -18,14 +18,17 @@ class Gloss:
 
     def __init__(self):
         pass
-        # ignoreFile = open("ignorelist", "r")
-        # ignoreText = ignoreFile.read()
-        # self.ignore_set = set(ignoreText.splitlines())
-        # ignoreFile.close()
 
-    def populate_ignore_set(self, frequency_list):
+    def populate_ignore_set(self, frequency_list, jlpt, freq_threshold):
         for entry in frequency_list:
-            if (entry['jlpt'] is None or entry['jlpt'] is 'N1') and entry['frequency'] < 100:
+            allowWord = entry['frequency'] < freq_threshold
+
+            level = entry['jlpt']
+            if level is not None:
+                if int(level[1]) > jlpt:
+                    allowWord = False
+
+            if not allowWord:
                 continue
 
             self.ignore_set.add(entry['word'])
@@ -33,7 +36,6 @@ class Gloss:
     def remember_word(self, gloss):
         wordIndex = gloss.find(' ')
         self.ignore_set.add(gloss[0:wordIndex])
-
 
     def send_request(self, url, term, tries):
         out = None
@@ -46,9 +48,7 @@ class Gloss:
             return self.send_request(self.mirrors[tries+1], term, tries+1)
         return out
 
-    def fetchGlosses(self, term):
-
-
+    def fetch_glosses(self, term):
         out = self.send_request(self.mirrors[0], term, 0)
 
         result = out.decode("utf8")
@@ -89,7 +89,6 @@ class Gloss:
 
         seenOpenBracket = False
 
-
         for i in range(len(gloss)):
             if i + tabIndex + 1 < len(gloss):
                 character = gloss[i + tabIndex + 1]
@@ -119,8 +118,6 @@ class Gloss:
                     tabIndex = i-1
                     break
 
-
-        blah = gloss[tabIndex]
         if gloss[tabIndex] == '{' or gloss[tabIndex] == '(':
             gloss = gloss[0:tabIndex] + ' ' + gloss[tabIndex::]
 
@@ -153,8 +150,6 @@ class Gloss:
         i = start
         seenOneSpace = False
         while i > 0:
-            charVal = ord(gloss[i])
-
             if gloss[i].isspace():
                 if i - 2 >= 0 and gloss[i - 1] == ';' and not gloss[i-2].isspace() and ord(gloss[i - 2]) < 128:
                     return gloss[i:start].lstrip()
@@ -181,7 +176,6 @@ class Gloss:
         return readings
 
     def generate_alt_readings(self, readings):
-
         if len(readings) == 0:
             return ''
 

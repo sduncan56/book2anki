@@ -3,7 +3,7 @@ from Gloss import Gloss
 class TestGloss(unittest.TestCase):
     def test_gloss(self):
         gloss = Gloss()
-        result = gloss.fetchGlosses('よく晴れた夜空')
+        result = gloss.fetch_glosses('よく晴れた夜空')
         self.assertEqual(len(result), 3)
 
     def test_clean_gloss_front(self):
@@ -62,7 +62,6 @@ class TestGloss(unittest.TestCase):
         inputText = gloss.remove_dict_annotations(inputText)
         result = gloss.clean_verb_stem(inputText)
         self.assertEqual('to clear up', result)
-
 
     def test_clean_gloss_back(self):
         gloss = Gloss()
@@ -155,7 +154,6 @@ class TestGloss(unittest.TestCase):
         altreadings = gloss.generate_alt_readings(readings)
         self.assertEqual(0, len(altreadings))
 
-
     @unittest.skip("this would look nicer but I don't actually care")
     def test_get_readings_cleaned(self):
         gloss = Gloss()
@@ -164,8 +162,6 @@ class TestGloss(unittest.TestCase):
 
         readings = gloss.get_readings(text)
         self.assertEqual('頭 【あたま; かしら】', readings[0])
-
-
 
     def test_remove_furigana(self):
         gloss = Gloss()
@@ -199,11 +195,17 @@ class TestGloss(unittest.TestCase):
         clean = self.clean_all(gloss, text)
         self.assertEqual("描く - to draw; to paint; to sketch; (2) (えがく only) to depict; to describe; (3) to picture in one's mind; to imagine; (4) to form a certain shape (e.g. path of an action, appearance of an object, etc.)", clean)
 
-
-
     def test_should_ignore_gloss(self):
         gloss = Gloss()
         gloss.ignore_set.add("生活")
         text = "生活 【せいかつ】 (n,vs) living; life (one's daily existence); livelihood; (P); ED "
         shouldIgnore = gloss.is_known_word(text)
         self.assertTrue(shouldIgnore)
+
+    def test_populate_ignore_set_jlpt(self):
+        gloss = Gloss()
+        frequency = [{'word': 'tst', 'jlpt': 'N2', 'frequency': 1},
+                     {'word': 'tst2', 'jlpt': 'N4', 'frequency': 1}]
+        gloss.populate_ignore_set(frequency, 3, 100)
+        self.assertEqual('tst', gloss.ignore_set.pop())
+        self.assertEqual(len(gloss.ignore_set), 0)
