@@ -1,109 +1,88 @@
-import genanki
-import os
 import re
-import time
-from Gloss import Gloss
 from japana.word_count import word_count
+import click
 
-class CardGenerator:
-    def __init__(self, deckName):
-        self.model = genanki.Model(1878474795,
-                                   'Japanese book v2',
-                                   fields=[
-                                       {'name': 'Expression'},
-                                       {'name': 'Reading'},
-                                       {'name': 'Gloss'},
-                                       {'name': 'AltReadings'},
-                                       {'name': 'Known Definitions'}
-                                   ],
-                                   templates=[
-                                       {
-                                           'name': 'Japanese Book',
-                                           'qfmt': ' <p style="font-size:30px;text-align:center"><span class=jp>{{Expression}}</span></p>',
-                                           'afmt': '<hr id="answer"><p style="font-size:30px;text-align:center"> {{furigana:Reading}}</p><p style="font-size:20px">{{furigana:Gloss}}</p>',
-                                       },
-                                   ])
-        self.deck = genanki.Deck(
-            1465567420,
-            deckName
-        )
+from Gloss import Gloss
 
-    def add_card(self, expression, reading, gloss, altreadings, knowndefs):
-        note = genanki.Note(
-            model=self.model,
-            fields=[expression, reading, gloss, altreadings, knowndefs],
-        )
-        self.deck.add_note(note)
-
-    def output_deck(self, path):
-        self.deck.write_to_file(path)
+from CardGenerator import CardGenerator
 
 
 
+class DeckBuilder:
+    glosser = Gloss()
+
+    def get_sentences_from_file(self, path):
+        file = open(path, "r")
+        string = file.read()
+
+        string = re.sub(r'《.+?》', '', string)
+        sentences = re.split('\n|。', string)
+
+        words = word_count(string, True, False, False)
+        self.glosser.populate_ignore_set(words)
+
+        return sentences
+
+    def process_sentences(self, sentences, cardGenerator):
+
+        for sentence in sentences:
+            if sentence.isspace():
+                continue
+
+            sentence = sentence.strip()
+
+            glosses = self.glosser.fetchGlosses(sentence)
+
+            definitions = altreadings = knowndefs = ''
+            altreadings, definitions, knowndefs = self.process_glosses(altreadings, definitions, glosses, knowndefs)
+
+            definitions = definitions[10::]
+            knowndefs = knowndefs[10::]
 
 
-file = open("帝国の王女.txt", "r")
-string = file.read()
+            cardGenerator.add_card(sentence, "", definitions, altreadings, knowndefs)
+            # count = count+1
+            # if count > 200:
+            #     break
 
-string = re.sub(r'《.+?》', '', string)
-sentences = re.split('\n|。', string)
+    def process_glosses(self, altreadings, definitions, glosses, knowndefs):
+        for gloss in glosses:
+            try:
+                gloss = self.glosser.remove_dict_annotations(gloss)
 
-words = word_count(string, True, False, False)
+                readings = self.glosser.get_readings(gloss)
+                altreadings += self.glosser.generate_alt_readings(readings)
 
+                gloss = self.glosser.clean_front(gloss)
 
-cardGen = CardGenerator("星界の紋章")
+                gloss = self.glosser.clean_verb_stem(gloss)
+                gloss = self.glosser.clean_back(gloss)
+                gloss = self.glosser.remove_furigana(gloss)
+            except Exception as e:
+                print("Error with term: " + gloss)
+                raise e
 
-glosser = Gloss()
-
-glosser.populate_ignore_set(words)
-
-count = 0
-
-
-for sentence in sentences:
-    if sentence.isspace():
-        continue
-
-    sentence = sentence.strip()
-
-    glosses = glosser.fetchGlosses(sentence)
-
-    definitions = ''
-    altreadings = ''
-    knowndefs = ''
-
-    for gloss in glosses:
-        try:
-            gloss = glosser.remove_dict_annotations(gloss)
-
-            readings = glosser.get_readings(gloss)
-            altreadings += glosser.generate_alt_readings(readings)
-
-            gloss = glosser.clean_front(gloss)
-
-            gloss = glosser.clean_verb_stem(gloss)
-            gloss = glosser.clean_back(gloss)
-            gloss = glosser.remove_furigana(gloss)
-        except Exception as e:
-            print("Error with term: " + gloss)
-            raise e
-
-        if glosser.is_known_word(gloss):
-            knowndefs += '</br></br>' + gloss
-        else:
-            definitions += '</br></br>'+gloss
-            glosser.remember_word(gloss)
-
-    definitions = definitions[10::]
-    knowndefs = knowndefs[10::]
-
-
-    cardGen.add_card(sentence, "", definitions, altreadings, knowndefs)
-    # count = count+1
-    # if count > 200:
-    #     break
-
+            if self.glosser.is_known_word(gloss):
+                knowndefs += '</br></br>' + gloss
+            else:
+                definitions += '</br></br>' + gloss
+                self.glosser.remember_word(gloss)
+        return altreadings, definitions, knowndefs
 
 
 
-cardGen.output_deck("星界の紋章.apkg")
+@click.command()
+@click.argument('filepath')
+@click.option('-output', default='deck', help='output filename')
+def create_cards(filepath, output):
+    cardGen = CardGenerator("星界の紋章")
+
+    deckBuilder = DeckBuilder()
+    sentences = deckBuilder.get_sentences_from_file(filepath)
+    deckBuilder.process_sentences(sentences, cardGen)
+
+    cardGen.output_deck(output+".apkg")
+
+
+if __name__ == '__main__':
+    create_cards()
