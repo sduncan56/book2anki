@@ -1,9 +1,13 @@
 
 import genanki
-
+from random import randint
 
 class CardGenerator:
-    def __init__(self, deckName):
+    def __init__(self, deckName, deckId):
+
+        if deckId == -1:
+            deckId = randint(0, 9999999999)
+
         self.model = genanki.Model(1878474795,
                                    'Japanese book v2',
                                    fields=[
@@ -21,7 +25,7 @@ class CardGenerator:
                                        },
                                    ])
         self.deck = genanki.Deck(
-            1465567420,
+            deckId,
             deckName
         )
 
