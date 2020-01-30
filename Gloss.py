@@ -16,9 +16,6 @@ class Gloss:
 
     ignore_set = set()
 
-    def __init__(self):
-        pass
-
     def populate_ignore_set(self, frequency_list, jlpt, freq_threshold):
         for entry in frequency_list:
             allowWord = entry['frequency'] < freq_threshold
@@ -43,9 +40,9 @@ class Gloss:
             url = url % parse.quote(term)
             out = request.urlopen(url).read()
         except error.HTTPError:
-            if tries+1 > len(self.mirrors):
+            if tries + 1 > len(self.mirrors):
                 raise ConnectionError("Cannot connect to any mirror")
-            return self.send_request(self.mirrors[tries+1], term, tries+1)
+            return self.send_request(self.mirrors[tries + 1], term, tries + 1)
         return out
 
     def fetch_glosses(self, term):
@@ -75,11 +72,11 @@ class Gloss:
 
         lineBreakIndex = gloss.find('<br>')
         if lineBreakIndex != -1:
-            gloss = gloss[lineBreakIndex+4::]
+            gloss = gloss[lineBreakIndex + 4::]
 
         firstSpaceIndex = gloss.find(' ')
         if gloss[firstSpaceIndex::].find('from') == 1:
-            gloss = gloss[firstSpaceIndex+6::]
+            gloss = gloss[firstSpaceIndex + 6::]
             if gloss[0] == ":":
                 gloss = gloss[1::]
             gloss = gloss.lstrip()
@@ -108,14 +105,14 @@ class Gloss:
 
         assert (cutIndex > 0)
 
-        #if there is no convenient tab, use the first english character (or '{') instead.
-        #argument could be made that we should do this anyway
+        # if there is no convenient tab, use the first english character (or '{') instead.
+        # argument could be made that we should do this anyway
         if tabIndex == -1:
-            for i in range(cutIndex+1, len(gloss)):
+            for i in range(cutIndex + 1, len(gloss)):
                 c = gloss[i]
                 charOrd = ord(gloss[i])
-                if charOrd >= 65 and charOrd <=90 or charOrd >= 97 and charOrd <= 123:
-                    tabIndex = i-1
+                if charOrd >= 65 and charOrd <= 90 or charOrd >= 97 and charOrd <= 123:
+                    tabIndex = i - 1
                     break
 
         if gloss[tabIndex] == '{' or gloss[tabIndex] == '(':
@@ -151,18 +148,18 @@ class Gloss:
         seenOneSpace = False
         while i > 0:
             if gloss[i].isspace():
-                if i - 2 >= 0 and gloss[i - 1] == ';' and not gloss[i-2].isspace() and ord(gloss[i - 2]) < 128:
+                if i - 2 >= 0 and gloss[i - 1] == ';' and not gloss[i - 2].isspace() and ord(gloss[i - 2]) < 128:
                     return gloss[i:start].lstrip()
 
                 elif not seenOneSpace:
                     seenOneSpace = True
-                elif i-2 >= 0 and gloss[i-1] == ';' and ord(gloss[i-2]) > 128:
+                elif i - 2 >= 0 and gloss[i - 1] == ';' and ord(gloss[i - 2]) > 128:
                     seenOneSpace = False
                 else:
                     return gloss[i:start].lstrip()
             elif gloss[i] == ':':
-                return gloss[i+1:start].lstrip()
-            i-=1
+                return gloss[i + 1:start].lstrip()
+            i -= 1
         return gloss[i:start]
 
     def get_readings(self, gloss):
@@ -191,9 +188,8 @@ class Gloss:
         for i, c in enumerate(gloss):
             if c == '【':
                 endIndex = gloss.find('】', i)
-                tst = gloss[lastGoodIndex:i]
                 result += gloss[lastGoodIndex:i]
-                lastGoodIndex = endIndex+1
+                lastGoodIndex = endIndex + 1
         result += gloss[lastGoodIndex::]
 
         return result
