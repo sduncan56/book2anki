@@ -1,9 +1,9 @@
 
 import click
 
-from Gloss import Gloss
-from CardGenerator import CardGenerator
-from DeckBuilder import DeckBuilder
+from deckbuilder.Gloss import Gloss
+from deckbuilder.CardGenerator import CardGenerator
+from deckbuilder.DeckBuilder import DeckBuilder
 
 
 @click.command()

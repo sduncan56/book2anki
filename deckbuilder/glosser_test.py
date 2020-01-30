@@ -1,5 +1,5 @@
 import unittest
-from Gloss import Gloss
+from deckbuilder.Gloss import Gloss
 class TestGloss(unittest.TestCase):
     def test_gloss(self):
         gloss = Gloss()
