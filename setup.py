@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # reading long description from file
 with open('DESCRIPTION.txt') as file:
@@ -14,14 +14,18 @@ CLASSIFIERS = [
     'Intended Audience :: Developers',
     'Topic :: Text Processing',
     'License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication',
-    'Programming Language :: Python',
-    'Programming Language:: Python:: 3:: Only',
-    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3',
 ]
 
 # calling the setup function
-setup(name='Japanese Deck Builder',
+setup(name='Japanese-Deck-Builder',
       version='1.0.0',
+      packages=find_packages(),
+      entry_points={
+          'console_scripts': [
+              'deckbuilder = deckbuilder.__main__:create_cards'
+          ]
+      },
       description='A tool for building Anki decks from Japanese text with well-formatted definitions',
       long_description=long_description,
       url='https://github.com/sduncan56/japanesedeckbuilder',
